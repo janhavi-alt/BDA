@@ -1,0 +1,70 @@
+Practical- 4
+Aim- Implement an application that stores big data in Hbase /
+MongoDB and manipulate it using R / Python
+
+Step1- Download MongoDB Installer
+Go to the MongoDB download page and select the Windows version.
+mongodb-windows-x86_64-7.0.12-signed.msi
+https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-4.0.0.zip
+download version 7 and 4 both using above link/replace the bin folder in version 7 with the bin folder of version 4
+
+Step2- Install mongodb
+Once downloaded,click on next -> accept the terms and click next -> Among complete and custome,click on complete -> check on install mongodb as a service also click the radio button run service as n/w service user -> next -> Install ->finish 
+
+Step3- Test Mongodb
+Go to cmd C:\Program Files\MongoDB\Server\7.0\bin and write mongod
+write mongo 
+show dbs (it will show available databases)
+
+** Run the following programs in python idle
+open cmd /cd C:\Users\Janhavi\AppData\Local\Programs\Python\Python38\Scripts / pip install pymongo 
+
+Program 1: Creating a Database: create_dp.py 
+import pymongo
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["mybigdata"]
+print(myclient.list_database_names())
+
+Progam 2: Creating a Collection: create_collection.py 
+import pymongo
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["mybigdata"] 
+mycol=mydb["student"]
+print(mydb.list_collection_names())
+
+Progam 3: Insert into Collection: insert_into_collection.py
+import pymongo
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["mybigdata"] 
+mycol=mydb["student"]
+mydict={"name":"Beena", "address":"Mumbai"}
+x=mycol.insert_one(mydict) # insert_one(containing the name(s) and value(s) of each field
+
+Program 4: Insert Multiple data into Collection: insert_many.py 
+import pymongo
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["mybigdata"] 
+mycol=mydb["student"]
+mylist=[{"name":"Khyati", "address":"Mumbai"}, {"name":"Kruti", "address":"Mumbai"},
+{"name":"Nidhi", "address":"Pune"}, {"name":"Komal", "address":"Pune"},] x=mycol.insert_many(mylist)
+
+** Test in Mongodb to check database and data inserted in collection
+show dbs (now it should show the newly created database along with the old ones)
+use mybigdata
+show collections
+1.If you want to display the first row from collection:
+db.student.findOne()
+2.If you want to display all the data from collection:
+db.student.find()
+3.count number of rows in a collection: 
+db.student.count()
+
+
+
+
+
+
+
+
+
+

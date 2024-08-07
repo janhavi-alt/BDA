@@ -1,0 +1,124 @@
+Steps to Run Word Count Application in Eclipse
+
+STEP 1: Download and Install Eclipse
+
+STEP 2: Create a New Java Project
+Enter the project name as `WordCount`. Make sure the Java version is 1.6 or above.
+
+STEP 3: Create a Java Class File and Write the Code
+1. In the Project Explorer, click on the `WordCount` project.
+2. Right-click on the `src` folder.
+3. Select `New` -> `Class`.
+4. Enter the class name as `WordCount`.
+5. Click on `Finish`.
+
+6. write the following code into `WordCount.java`. Save the file.
+
+package org.myorg;
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+public class WordCount {
+
+    public static class Map extends Mapper<LongWritable, Text, Text, IntWritable> {
+        private final static IntWritable one = new IntWritable(1);
+        private Text word = new Text();
+
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            String line = value.toString();
+            StringTokenizer tokenizer = new StringTokenizer(line);
+            while (tokenizer.hasMoreTokens()) {
+                word.set(tokenizer.nextToken());
+                context.write(word, one);
+            }
+        }
+    }
+
+    public static class Reduce extends Reducer<Text, IntWritable, Text, IntWritable> {
+        public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            context.write(key, new IntWritable(sum));
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "wordcount");
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+        job.setMapperClass(Map.class);
+        job.setReducerClass(Reduce.class);
+
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        job.waitForCompletion(true);
+    }
+}
+
+
+STEP 4: Add External Libraries from Hadoop
+1. Right-click on the `WordCount` project.
+2. Go to `Build Path` -> `Configure Build Path`.
+3. Click on the `Libraries` tab.
+4. Click on `Add External JARs...`.
+5. Add the following JAR files from your Hadoop installation directories:
+
+    - `/usr/local/hadoop/share/hadoop/common/*.jar`
+    - `/usr/local/hadoop/share/hadoop/common/lib/*.jar`
+    - `/usr/local/hadoop/share/hadoop/mapreduce/*.jar` (excluding `hadoop-mapreduce-examples-2.7.3.jar`)
+    - `/usr/local/hadoop/share/hadoop/yarn/*.jar`
+
+6. Click on `OK`. All errors in the code should now be resolved.
+
+STEP 5: Running the MapReduce Code
+1. Create an input file for the WordCount project.
+    - Right-click on the `WordCount` project.
+    - Select `New` -> `File`.
+    - Enter a file name and click `OK`.
+    - Copy and paste the following content into the file:
+
+eg:
+      car bus
+      bike bike bus
+      aeroplane truck car bus
+
+
+2. Configure and run the application.
+    - Right-click on the `WordCount` project.
+    - Select `Run As` -> `Run Configurations`.
+    - Create a new configuration by clicking on `New Launch Configuration`.
+    - Set the configuration name, project name, and main class (e.g., `org.myorg.WordCount`).
+
+3. Execute the application.
+   Go to project manager -> org.myorg -> WordCount.java -> right click -> export    -> create a jar file -> save the jar file into hadoop directory or any directory you want(in my case WordCount.jar)
+    Go to cmd cd C:\hadoop-3.2.4\sbin and type start-dfs.cmd and start-yarn.cmd
+    Go to cmd cd C:\hadoop-3.2.4\bin and type:
+    hdfs dfs -mkdir /input (create directory named input)
+hdfs dfs -put C:\Users\Janhavi\eclipse-workspace\WordCount\testing /input (to put the file into input directory)
+hdfs dfs -cat /input/testing (to read the file)
+hadoop jar C:\hadoop-3.2.4\WordCount.jar /input/testing /outputdir
+
+4. Check the output of the WordCount application.
+    check the outputdir to see the output

@@ -1,0 +1,136 @@
+Implement an Mapreduce program that process a weather dataset
+
+Aim- Analyzing weather data of Fairbanks, Alaska to find cold and hot days using MapReduce in Hadoop.
+
+Step 1: Download Dataset
+1. Download the dataset from the [NCEI website](https://www.ncei.noaa.gov/).
+2. Choose a dataset, e.g., `CRND0103-2020-AK_Fairbanks_11_NE.txt` for analysis.
+3. Refer to the `README.txt` file on the NCEI website for data information.
+
+Step 2: Understand Dataset Structure
+1. The dataset columns 6 and 7 represent Maximum and Minimum temperatures respectively.
+
+Step 3: Set Up Eclipse Project
+1. Open Eclipse.
+2. Go to `File` -> `New` -> `Java Project`.
+3. Name the project `MyProject`.
+4. Choose `JavaSE-1.8` and click `Finish`.
+
+Step 4: Create Java Class
+1. Right-click on `src` folder in `MyProject`.
+2. Select `New` -> `Class`.
+3. Name the class `MyMaxMin` and click `Finish`.
+
+Step 5: Add Source Code
+1. write the following code into `MyMaxMin.java`:
+
+import java.io.IOException;
+import java.util.Iterator;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.conf.Configuration;
+
+public class MyMaxMin {
+
+    public static class MaxTemperatureMapper extends Mapper<LongWritable, Text, Text, Text> {
+        public static final int MISSING = 9999;
+
+        @Override
+        public void map(LongWritable arg0, Text Value, Context context) throws IOException, InterruptedException {
+            String line = Value.toString();
+
+            if (!(line.length() == 0)) {
+                String date = line.substring(6, 14);
+                float temp_Max = Float.parseFloat(line.substring(39, 45).trim());
+                float temp_Min = Float.parseFloat(line.substring(47, 53).trim());
+
+                if (temp_Max > 30.0) {
+                    context.write(new Text("The Day is Hot Day :" + date), new Text(String.valueOf(temp_Max)));
+                }
+
+                if (temp_Min < 15) {
+                    context.write(new Text("The Day is Cold Day :" + date), new Text(String.valueOf(temp_Min)));
+                }
+            }
+        }
+    }
+
+    public static class MaxTemperatureReducer extends Reducer<Text, Text, Text, Text> {
+        public void reduce(Text Key, Iterator<Text> Values, Context context) throws IOException, InterruptedException {
+            String temperature = Values.next().toString();
+            context.write(Key, new Text(temperature));
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "weather example");
+        job.setJarByClass(MyMaxMin.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Text.class);
+        job.setMapperClass(MaxTemperatureMapper.class);
+        job.setReducerClass(MaxTemperatureReducer.class);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+
+        Path OutputPath = new Path(args[1]);
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        OutputPath.getFileSystem(conf).delete(OutputPath, true);
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
+```
+
+Step 6: Add Hadoop Libraries
+1. Download Hadoop Common and Hadoop MapReduce Core JARs according to your Hadoop version.
+2. Right-click on `MyProject`.
+3. Select `Build Path` -> `Configure Build Path`.
+4. Click on `Libraries` -> `Add External JARs...`.
+5. Add the downloaded JAR files.
+6. Click `Apply and Close`.
+
+Step 7: Export Project as JAR
+1. Right-click on `MyProject`.
+2. Choose `Export...`.
+3. Go to `Java` -> `JAR file` and click `Next`.
+4. Select the export destination and click `Next`.
+5. Choose the main class `MyMaxMin` and click `Finish`.
+
+Step 8: Start Hadoop Daemons
+Open the terminal and start Hadoop daemons:
+
+   
+    start-dfs.sh
+    start-yarn.sh
+   
+
+Step 9: Move Dataset to HDFS
+1. Upload the dataset to HDFS:
+ hdfs dfs -put /home/dikshant/Downloads/CRND0103-2020-AK_Fairbanks_11_NE.txt 
+
+2. Verify the file in HDFS:
+hdfs dfs -ls 
+
+Step 10: Run the JAR File
+1. Run the JAR file with the following command:
+hadoop jar /home/dikshant/Documents/Project.jar /CRND0103-2020-AK_Fairbanks_11_NE.txt /MyOutput
+
+
+Step 11: View the Results
+1. Go to `localhost:50070/`.
+2. Under `Utilities`, select `Browse the file system`.
+3. Download `part-r-00000` from `/MyOutput` directory to see the results.
+
+Step 12: Analyze Results
+Open the downloaded file to view the analysis of cold and hot days.
+
